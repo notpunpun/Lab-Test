@@ -1,160 +1,151 @@
+/*
+Author: Nuha Nordin
+Program: Lab Test - MindSharpener
+Date: 4 January 2024
+*/
 package com.example.mindsharpener
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowCompat
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
-import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
-import androidx.fragment.app.Fragment
-import com.example.mindsharpener.databinding.ActivityMainBinding
-import java.util.Random
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var radioGroup: RadioGroup
+    private lateinit var levelButton: Button
+    private lateinit var number1TextView: TextView
+    private lateinit var operatorTextView: TextView
+    private lateinit var number2TextView: TextView
+    private lateinit var editText: EditText
+    private lateinit var pointTextView: TextView
 
-    class MathQuizFragment : Fragment() {
+    private var level: String = ""
+    private var num1: Int = 0
+    private var num2: Int = 0
+    private var operator: Int = 0
+    private var userAnswer: Int = 0
+    private var currentPoint: Int = 0
 
-        private lateinit var radioButton1: RadioButton
-        private lateinit var radioButton2: RadioButton
-        private lateinit var radioButton3: RadioButton
-        private lateinit var textview4: TextView
-        private lateinit var textview5: TextView
-        private lateinit var textview6: TextView
-        private lateinit var editText: EditText
-        private lateinit var buttonSubmit: Button
-        private lateinit var textviewScore: TextView
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        private var currentScore = 0
+        // Add AppBar
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
-        override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?
-        ): View? {
-            val view = inflater.inflate(R.layout.fragment_first, container, false)
+        // Initialize views
+        radioGroup = findViewById(R.id.level)
+        levelButton = findViewById(R.id.button)
+        number1TextView = findViewById(R.id.number1)
+        operatorTextView = findViewById(R.id.operator)
+        number2TextView = findViewById(R.id.number2)
+        editText = findViewById(R.id.answer)
+        pointTextView = findViewById(R.id.point)
 
-            // Initialize views
-            radioButton1 = view.findViewById(R.id.radio_button1)
-            radioButton2 = view.findViewById(R.id.radio_button2)
-            radioButton3 = view.findViewById(R.id.radio_button3)
-            textview4 = view.findViewById(R.id.textview4)
-            textview5 = view.findViewById(R.id.textview5)
-            textview6 = view.findViewById(R.id.textview6)
-            editText = view.findViewById(R.id.edit_text)
-            buttonSubmit = view.findViewById(R.id.button_submit)
-//            textviewScore = view.findViewById(R.id.textview_score)
-
-            // Set up click listener for the submit button
-            buttonSubmit.setOnClickListener {
-                checkAnswer()
-                displayQuestion()
-            }
-
-            // Display the first question when the fragment is created
-            displayQuestion()
-
-            return view
+        // Set listener for the RadioGroup level
+        radioGroup.setOnCheckedChangeListener { _, _ -> generateQuestion()
         }
 
-        private fun displayQuestion() {
-            // Instantiate random class
-            val random = Random()
-
-            // Determine which radio button is checked
-            val level = when {
-                radioButton1.isChecked -> 3
-                radioButton2.isChecked -> 5
-                radioButton3.isChecked -> 7
-                else -> 3 // Default level
-            }
-
-            // Generate 2 random numbers based on the checked radio button
-            val firstNumber = generateRandomNumber(level)
-            val secondNumber = generateRandomNumber(level)
-
-            // Generate a random number for the operator
-            val operator = random.nextInt(4) // 0: +, 1: -, 2: *, 3: /
-
-            // Display generated numbers for operands and symbol for the generated operator
-            textview4.text = firstNumber.toString()
-            textview5.text = getOperatorSymbol(operator)
-            textview6.text = secondNumber.toString()
-
-            // Clear the user's previous answer
-            editText.text.clear()
+        // Set listener for button
+        levelButton.setOnClickListener { checkAnswer()
         }
 
-        private fun checkAnswer() {
-            val userAnswer = editText.text.toString().trim()
+        generateQuestion()
+    }
 
-            // Get the first number, second number, and operator from the displayed question
-            val firstNumber = textview4.text.toString().toInt()
-            val secondNumber = textview6.text.toString().toInt()
-            val operator = getOperatorSymbolInverse(textview5.text.toString())
-
-            // Calculate the correct answer
-            val correctAnswer = calculateAnswer(firstNumber, secondNumber, operator)
-
-            // Compare the answer with the user's answer
-            if (userAnswer == correctAnswer.toString()) {
-                currentScore++
-            } else {
-                currentScore--
-            }
-
-            // Display the current score
-            textviewScore.text = "Score: $currentScore"
+    private fun generateQuestion() {
+        // Check level
+        when (radioGroup.checkedRadioButtonId) {
+            R.id.radio_i3 -> level = "i3"
+            R.id.radio_i5 -> level = "i5"
+            R.id.radio_i7 -> level = "i7"
         }
 
-        private fun generateRandomNumber(level: Int): Int {
-            val random = Random()
-            return when (level) {
-                3 -> random.nextInt(10) // Generate a random number between 0 and 9
-                5 -> random.nextInt(100) // Generate a random number between 0 and 99
-                7 -> random.nextInt(1000) // Generate a random number between 0 and 999
-                else -> 0 // Default case
-            }
+        // Generate random numbers based on level
+        num1 = generateRandomNumber(level)
+        num2 = generateRandomNumber(level)
+
+        // Generate random operator
+        operator = Random.nextInt(4)
+
+        // Display the generated question
+        number1TextView.text = num1.toString()
+        operatorTextView.text = getOperatorSymbol(operator)
+        number2TextView.text = num2.toString()
+    }
+
+    private fun generateRandomNumber(level: String): Int {
+        val maxRange = when (level) {
+            "i3" -> 9
+            "i5" -> 99
+            "i7" -> 999
+            else -> 9
+        }
+        return Random.nextInt(maxRange + 1)
+    }
+
+    private fun getOperatorSymbol(operator: Int): String {
+        return when (operator) {
+            0 -> "+"
+            1 -> "-"
+            2 -> "*"
+            3 -> "/"
+            else -> "+"
+        }
+    }
+
+    private fun checkAnswer() {
+        // Get input answer
+        val answerText = editText.text.toString().trim()
+
+        if (answerText.isBlank()) {
+            // Display error message if answer is blank
+            Toast.makeText(applicationContext, "Please enter an answer", Toast.LENGTH_SHORT).show()
+            return
         }
 
-        private fun getOperatorSymbol(operator: Int): String {
-            return when (operator) {
-                0 -> "+" // Addition
-                1 -> "-" // Subtraction
-                2 -> "*" // Multiplication
-                3 -> "/" // Division
-                else -> "+"
-            }
+        // Parse answer to Int
+        userAnswer = answerText.toInt()
+
+        // Calculate the correct answer based on the generated numbers and operator
+        val correctAnswer = calculateAnswer(num1, operator, num2)
+
+        // Check if answer is correct
+        if (userAnswer == correctAnswer) {
+            // Increment the point
+            Toast.makeText(applicationContext, "Congrats! One point gained", Toast.LENGTH_LONG).show()
+            currentPoint++
+        } else {
+            // Decrement the point
+            Toast.makeText(applicationContext, "Ops! One point deducted", Toast.LENGTH_LONG).show()
+            currentPoint--
         }
 
-        private fun getOperatorSymbolInverse(operator: String): Int {
-            return when (operator) {
-                "+" -> 0
-                "-" -> 1
-                "*" -> 2
-                "/" -> 3
-                else -> 0
-            }
-        }
+        // Update point
+        pointTextView.text = currentPoint.toString()
 
-        private fun calculateAnswer(firstNumber: Int, secondNumber: Int, operator: Int): Int {
-            return when (operator) {
-                0 -> firstNumber + secondNumber // Addition
-                1 -> firstNumber - secondNumber // Subtraction
-                2 -> firstNumber * secondNumber // Multiplication
-                3 -> firstNumber / secondNumber // Division
-                else -> 0
-            }
+        // Generate new question
+        generateQuestion()
+
+        // Clear the answer for the next input
+        editText.text.clear()
+    }
+
+
+    private fun calculateAnswer(num1: Int, operator: Int, num2: Int): Int {
+        return when (operator) {
+            0 -> num1 + num2
+            1 -> num1 - num2
+            2 -> num1 * num2
+            3 -> if (num2 != 0) num1 / num2 else 0
+            else -> 0
         }
     }
 }
